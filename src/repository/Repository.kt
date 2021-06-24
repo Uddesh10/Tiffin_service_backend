@@ -27,6 +27,8 @@ interface Repository {
       fun getService(id : Int) : List<ServiceDetailsModel>
       fun getUserDetails(username : String) : List<UserDetails>
       fun getAdminService(username : String) : List<AdminServiceModel>
+      fun getAdminPersonalDetails(username : String) : List<PersonalDetailsModel>
+      fun getAdminService(id : Int) : List<AddServiceModel>
     //delete
       fun deleteService(id : Int) : Boolean
 

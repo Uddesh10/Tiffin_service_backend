@@ -26,9 +26,9 @@ class DatabaseManager {
                 set(UserDetails.fullname, model.fullname)
                 set(UserDetails.password, model.password)
                 set(UserDetails.mobileno, model.mobileno)
-                set(UserDetails.location, null)
-                set(UserDetails.latitude, null)
-                set(UserDetails.longitude, null)
+                set(UserDetails.location, " ")
+                set(UserDetails.latitude, 0.0)
+                set(UserDetails.longitude, 0.0)
             }
         } catch (e: Exception) {
             return false
@@ -41,9 +41,13 @@ class DatabaseManager {
             .firstOrNull { (it.username eq model.username) and (it.password eq model.password) }
     }
 
-    fun adminLogin(model : LoginModel) : AdminDetailsEntity?{
-        return database.sequenceOf(AdminDetails)
-            .firstOrNull { (it.username eq model.username) and (it.password eq model.password) }
+    fun adminLogin(model: LoginModel): AdminDetailsEntity? {
+        return try {
+            database.sequenceOf(AdminDetails)
+                .firstOrNull { (it.username eq model.username) and (it.password eq model.password) }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun updateUserLocation(username: String, model: LocationModel): Boolean {
@@ -58,7 +62,7 @@ class DatabaseManager {
         return result > 0
     }
 
-    fun updateAdminLocation(username: String, model: LocationModel) : Boolean{
+    fun updateAdminLocation(username: String, model: LocationModel): Boolean {
         val result = database.update(AdminDetails) {
             set(UserDetails.location, model.location)
             set(UserDetails.latitude, model.latitude)
@@ -163,15 +167,15 @@ class DatabaseManager {
     fun renewService(id: Int, days: Int): Boolean {
         var query = false
         database.from(SubscribedUser)
-            .innerJoin(ServiceInfo , on = ServiceInfo.serviceid eq SubscribedUser.seriviceid)
+            .innerJoin(ServiceInfo, on = ServiceInfo.serviceid eq SubscribedUser.seriviceid)
             .select(ServiceInfo.active)
             .where {
                 SubscribedUser.id eq id
             }
-            .map {row->
+            .map { row ->
                 query = row[ServiceInfo.active]!!
             }
-        if(query) {
+        if (query) {
             database.update(SubscribedUser) {
                 set(SubscribedUser.daysremaining, days)
                 where {
@@ -348,7 +352,7 @@ class DatabaseManager {
     }
 
     private fun availability(lunch: Boolean, dinner: Boolean): String {
-        val result : String
+        val result: String
         if (lunch && dinner) {
             result = "lunch , dinner"
         } else if (lunch) {
@@ -391,7 +395,7 @@ class DatabaseManager {
 
     }
 
-    fun getServiceProvider(username: String , adminUsername : String): List<ServiceProviderDetailsModel> {
+    fun getServiceProvider(username: String, adminUsername: String): List<ServiceProviderDetailsModel> {
         return database.from(AdminDetails)
             .select()
             .where {
@@ -434,20 +438,21 @@ class DatabaseManager {
             }
     }
 
-    fun getService(id : Int): List<ServiceDetailsModel> {
+    fun getService(id: Int): List<ServiceDetailsModel> {
         return database.from(ServiceInfo)
-            .innerJoin(AdminDetails , on = AdminDetails.username eq ServiceInfo.username)
-            .select(ServiceInfo.serviceid,
-                    ServiceInfo.foodimage,
-                    ServiceInfo.name,
-                    ServiceInfo.price,
-                    ServiceInfo.description,
-                    AdminDetails.upiid
-                )
+            .innerJoin(AdminDetails, on = AdminDetails.username eq ServiceInfo.username)
+            .select(
+                ServiceInfo.serviceid,
+                ServiceInfo.foodimage,
+                ServiceInfo.name,
+                ServiceInfo.price,
+                ServiceInfo.description,
+                AdminDetails.upiid
+            )
             .where {
                 ServiceInfo.serviceid eq id
             }
-            .map { row->
+            .map { row ->
 
                 ServiceDetailsModel(
                     id = row[ServiceInfo.serviceid]!!,
@@ -458,6 +463,59 @@ class DatabaseManager {
                     upiid = row[AdminDetails.upiid]!!
                 )
 
+            }
+    }
+
+    fun getPersonalDetails(username: String): List<PersonalDetailsModel> {
+        return database.from(AdminDetails)
+            .select(
+                AdminDetails.providername,
+                AdminDetails.contactno,
+                AdminDetails.upiid,
+                AdminDetails.vegnonveg,
+                AdminDetails.lunch,
+                AdminDetails.dinner,
+                AdminDetails.lunchtimefrom,
+                AdminDetails.lunchtimeto,
+                AdminDetails.dinnertimefrom,
+                AdminDetails.dinnertimeto,
+                AdminDetails.logoimage
+            )
+            .where {
+                AdminDetails.username eq username
+            }
+            .map { row ->
+                PersonalDetailsModel(
+                    providername = row[AdminDetails.providername]!!,
+                    contactno = row[AdminDetails.contactno]!!,
+                    upiid = row[AdminDetails.upiid]!!,
+                    vegnonveg = row[AdminDetails.vegnonveg]!!,
+                    lunch = row[AdminDetails.lunch]!!,
+                    dinner = row[AdminDetails.dinner]!!,
+                    lunchtimefrom = row[AdminDetails.lunchtimefrom]!!,
+                    lunchtimeto = row[AdminDetails.lunchtimeto]!!,
+                    dinnertimefrom = row[AdminDetails.dinnertimefrom]!!,
+                    dinnertimeto = row[AdminDetails.dinnertimeto]!!,
+                    logoimage = row[AdminDetails.logoimage]!!
+                )
+            }
+    }
+
+    fun getAdminService(id: Int): List<AddServiceModel>{
+        return database.from(ServiceInfo)
+            .select()
+            .where {
+                ServiceInfo.serviceid eq id
+            }
+            .map {row->
+                AddServiceModel(
+                    foodimage = row[ServiceInfo.foodimage]!!,
+                    servicename = row[ServiceInfo.name]!!,
+                    price = row[ServiceInfo.price]!!,
+                    description = row[ServiceInfo.description]!!,
+                    username = row[ServiceInfo.username]!!,
+                    active = row[ServiceInfo.active]!!
+                )
             }
     }
 }

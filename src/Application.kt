@@ -43,127 +43,185 @@ fun Application.module() {
         val repository = RepositoryImplementation()
 
         authenticate("auth-admin") {
-            put("/userlocation") {
-                val locationModel = call.receive<LocationModel>()
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
-                if (principal == username) {
-                    repository.putAdminLocation(username, locationModel)
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+            put("/adminlocation") {
+                try {
+                    val locationModel = call.receive<LocationModel>()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        repository.putAdminLocation(username, locationModel)
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             put("/personaldetails") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
-                var data: String
-                var fileName = ""
-                var personalDetailsModel: PersonalDetailsModel
-                if(principal == username) {
-                    val multipartData = call.receiveMultipart()
-                    multipartData.forEachPart { part ->
-                        when (part) {
-                            is PartData.FormItem -> {
-                                data = part.value
-                                personalDetailsModel = gson.fromJson(data, PersonalDetailsModel::class.java)
-                                repository.putPersonalDetails(username, personalDetailsModel)
-                                fileName = personalDetailsModel.logoimage
-                            }
-                            is PartData.FileItem -> {
-                                val fileBytes = part.streamProvider().readBytes()
-                                File("logoimages/$fileName").writeBytes(fileBytes)
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    var data: String
+                    var fileName = ""
+                    var personalDetailsModel: PersonalDetailsModel
+                    if (principal == username) {
+                        val multipartData = call.receiveMultipart()
+                        multipartData.forEachPart { part ->
+                            when (part) {
+                                is PartData.FormItem -> {
+                                    data = part.value
+                                    personalDetailsModel = gson.fromJson(data, PersonalDetailsModel::class.java)
+                                    repository.putPersonalDetails(username, personalDetailsModel)
+                                    fileName = personalDetailsModel.logoimage
+                                }
+                                is PartData.FileItem -> {
+                                    val fileBytes = part.streamProvider().readBytes()
+                                    File("logoimages/$fileName").writeBytes(fileBytes)
+                                }
                             }
                         }
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
                     }
-                    call.respond(HttpStatusCode.OK)
-                }else{
-                    call.respond(HttpStatusCode.Unauthorized)
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             post("/addservice") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
-                val multipartData = call.receiveMultipart()
-                var addServiceModel: AddServiceModel
-                var fileName = ""
-                var data: String
-                if(principal == username){
-                    multipartData.forEachPart { part ->
-                        when (part) {
-                            is PartData.FormItem -> {
-                                data = part.value
-                                addServiceModel = gson.fromJson(data, AddServiceModel::class.java)
-                                val id = repository.postAddService(addServiceModel)
-                                fileName = "${addServiceModel.username}$id.png"
-                                repository.updateFoodImage(fileName, id)
-                            }
-                            is PartData.FileItem -> {
-                                val fileBytes = part.streamProvider().readBytes()
-                                File("foodimages/$fileName").writeBytes(fileBytes)
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    val multipartData = call.receiveMultipart()
+                    var addServiceModel: AddServiceModel
+                    var fileName = ""
+                    var data: String
+                    if (principal == username) {
+                        multipartData.forEachPart { part ->
+                            when (part) {
+                                is PartData.FormItem -> {
+                                    data = part.value
+                                    addServiceModel = gson.fromJson(data, AddServiceModel::class.java)
+                                    val id = repository.postAddService(addServiceModel)
+                                    fileName = "${addServiceModel.username}$id.png"
+                                    repository.updateFoodImage(fileName, id)
+                                }
+                                is PartData.FileItem -> {
+                                    val fileBytes = part.streamProvider().readBytes()
+                                    File("foodimages/$fileName").writeBytes(fileBytes)
+                                }
                             }
                         }
+                        call.respond(HttpStatusCode.Created)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
                     }
-                    call.respond(HttpStatusCode.Created)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             put("/updateservice") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
-                val multipartData = call.receiveMultipart()
-                val id = call.parameters["id"]!!.toInt()
-                var updateServiceModel: AddServiceModel
-                var fileName = ""
-                var data: String
-                if(principal == username) {
-                    multipartData.forEachPart { part ->
-                        when (part) {
-                            is PartData.FormItem -> {
-                                data = part.value
-                                updateServiceModel = gson.fromJson(data, AddServiceModel::class.java)
-                                repository.putService(id, updateServiceModel)
-                                fileName = updateServiceModel.foodimage
-                            }
-                            is PartData.FileItem -> {
-                                val fileBytes = part.streamProvider().readBytes()
-                                File("foodimages/$fileName").writeBytes(fileBytes)
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    val multipartData = call.receiveMultipart()
+                    val id = call.parameters["id"]!!.toInt()
+                    var updateServiceModel: AddServiceModel
+                    var fileName = ""
+                    var data: String
+                    if (principal == username) {
+                        multipartData.forEachPart { part ->
+                            when (part) {
+                                is PartData.FormItem -> {
+                                    data = part.value
+                                    updateServiceModel = gson.fromJson(data, AddServiceModel::class.java)
+                                    repository.putService(id, updateServiceModel)
+                                    fileName = updateServiceModel.foodimage
+                                }
+                                is PartData.FileItem -> {
+                                    val fileBytes = part.streamProvider().readBytes()
+                                    File("foodimages/$fileName").writeBytes(fileBytes)
+                                }
                             }
                         }
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
                     }
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             delete("/deleteservice/{id}") {
-                val id = call.parameters["id"]!!.toInt()
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
-                if (principal == username) {
-                    repository.deleteService(id)
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val id = call.parameters["id"]!!.toInt()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        val fileName = "$username$id.png"
+                        val file = File("foodimages/$fileName")
+                        file.delete()
+                        repository.deleteService(id)
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             get("/userdetails") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
-                if (principal == username) {
-                    call.respond(HttpStatusCode.OK , repository.getUserDetails(username))
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getUserDetails(username))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             get("/getadminservice") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
-                if (principal == username) {
-                    call.respond(HttpStatusCode.OK , repository.getAdminService(username))
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getAdminService(username))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
+                }
+            }
+            get("/personaldetails"){
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getAdminPersonalDetails(username))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
+                }
+            }
+            get("/servicedetails"){
+                try {
+                    val id = call.parameters["id"]!!.toInt()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getAdminService(id))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
 
@@ -171,143 +229,194 @@ fun Application.module() {
 
         authenticate("auth-user") {
             put("/userlocation") {
-                val locationModel = call.receive<LocationModel>()
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    repository.putUserLocation(username, locationModel)
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val locationModel = call.receive<LocationModel>()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        repository.putUserLocation(username, locationModel)
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             post("/addsubscription") {
-                val subscribeServiceModel = call.receive<SubscribeServiceModel>()
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    repository.postSubscribeService(subscribeServiceModel)
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val subscribeServiceModel = call.receive<SubscribeServiceModel>()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        repository.postSubscribeService(subscribeServiceModel)
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             put("/updateactive") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                val id: Int = call.parameters["id"]!!.toInt()
-                val active = call.parameters["active"]!!.toBoolean()
-                if(principal == username){
-                    repository.putActiveService(id, active)
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    val id: Int = call.parameters["id"]!!.toInt()
+                    val active = call.parameters["active"]!!.toBoolean()
+                    if (principal == username) {
+                        repository.putActiveService(id, active)
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             put("/renewservice") {
-                val id = call.parameters["id"]!!.toInt()
-                val days = call.parameters["days"]!!.toInt()
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    val done = repository.putRenewService(id, days)
-                    if(done) {
-                        call.respond(HttpStatusCode.OK)
+                try {
+                    val id = call.parameters["id"]!!.toInt()
+                    val days = call.parameters["days"]!!.toInt()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        val done = repository.putRenewService(id, days)
+                        if (done) {
+                            call.respond(HttpStatusCode.OK)
+                        } else {
+                            call.respond(HttpStatusCode.NotAcceptable)
+                        }
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
                     }
-                    else{
-                        call.respond(HttpStatusCode.NotAcceptable)
-                    }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
-            get("/subscribeduser") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    call.respond(HttpStatusCode.OK, repository.getAllSubscribedService(username))
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+            get("/subscribedservice") {
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getAllSubscribedService(username))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
-            get("/subscribeduserdetails") {
-                val id = call.parameters["id"]!!.toInt()
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    call.respond(HttpStatusCode.OK,repository.getSubscribedService(id))
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+            get("/subscribedservicedetails") {
+                try {
+                    val id = call.parameters["id"]!!.toInt()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getSubscribedService(id))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             get("/getallserviceprovider") {
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    call.respond(HttpStatusCode.OK,repository.getAllServiceProvider(username))
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getAllServiceProvider(username))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             get("/getserviceprovider") {
-                val username = call.parameters["username"]!!
-                val providerUsername = call.parameters["providerUsername"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    call.respond(HttpStatusCode.OK,repository.getServiceProvider(username, providerUsername))
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val username = call.parameters["username"]!!
+                    val providerUsername = call.parameters["providerUsername"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getServiceProvider(username, providerUsername))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
             get("/getservice") {
-                val id = call.parameters["id"]!!.toInt()
-                val username = call.parameters["username"]!!
-                val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
-                if(principal == username){
-                    call.respond(HttpStatusCode.OK,repository.getService(id))
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val id = call.parameters["id"]!!.toInt()
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTUserConfig.JwtUser>()!!.userName
+                    if (principal == username) {
+                        call.respond(HttpStatusCode.OK, repository.getService(id))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    call.respond(HttpStatusCode.BadRequest)
                 }
             }
         }
 
 
         post("/usersignup") {
-            val signupModel = call.receive<SignupModel>()
-            val result = repository.postSignup(signupModel)
-            if (result) {
-                call.respond(HttpStatusCode.Created)
-            } else {
-                call.respond(HttpStatusCode.NotAcceptable)
+            try {
+                val signupModel = call.receive<SignupModel>()
+                val result = repository.postSignup(signupModel)
+                if (result) {
+                    call.respond(HttpStatusCode.Created)
+                } else {
+                    call.respond(HttpStatusCode.NotAcceptable)
+                }
+            }catch (e : Exception){
+                call.respond(HttpStatusCode.BadRequest)
             }
         }
         post("/userlogin") {
-            val loginModel = call.receive<LoginModel>()
-            val user = repository.postLogin(loginModel)
-            if (user == null) {
-                call.respond(HttpStatusCode.Unauthorized)
-            } else {
-                val token = jwtUserConfig.generateToken(JWTUserConfig.JwtUser(user.username))
-                call.respond(HttpStatusCode.OK, token)
+            try {
+                val loginModel = call.receive<LoginModel>()
+                val user = repository.postLogin(loginModel)
+                if (user == null) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                } else {
+                    val token = jwtUserConfig.generateToken(JWTUserConfig.JwtUser(user.username))
+                    call.respond(HttpStatusCode.OK, token)
+                }
+            }catch (e : Exception){
+                call.respond(HttpStatusCode.BadRequest)
             }
         }
         post("/adminlogin") {
-            val loginModel = call.receive<LoginModel>()
-            val user = repository.postAdminLogin(loginModel)
-            if (user == null) {
-                call.respond(HttpStatusCode.Unauthorized)
-            } else {
-                val token = jwtAdminConfig.generateToken(JWTAdminConfig.JwtUser(user.username))
-                call.respond(HttpStatusCode.OK, token)
+            try {
+                val loginModel = call.receive<LoginModel>()
+                val user = repository.postAdminLogin(loginModel)
+                if (user == null) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                } else {
+                    val token = jwtAdminConfig.generateToken(JWTAdminConfig.JwtUser(user.username))
+                    call.respond(HttpStatusCode.OK, token)
+                }
+            }catch (e : Exception){
+                call.respond(HttpStatusCode.BadRequest)
             }
         }
         post("/adminsignup") {
-            val signupModel = call.receive<AdminSignupModel>()
-            val result = repository.postAdminSignup(signupModel)
-            if (result) {
-                call.respond(HttpStatusCode.Created)
-            } else {
-                call.respond(HttpStatusCode.NotAcceptable)
+            try {
+                val signupModel = call.receive<AdminSignupModel>()
+                val result = repository.postAdminSignup(signupModel)
+                if (result) {
+                    call.respond(HttpStatusCode.Created)
+                } else {
+                    call.respond(HttpStatusCode.NotAcceptable)
+                }
+            }catch (e : Exception){
+                call.respond(HttpStatusCode.BadRequest)
             }
         }
         get("/getlogo"){
@@ -321,6 +430,7 @@ fun Application.module() {
             call.respondFile(file)
         }
 
+
+
     }
 }
-

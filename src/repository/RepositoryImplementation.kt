@@ -86,6 +86,14 @@ class RepositoryImplementation : Repository {
         return database.getAdminService(username)
     }
 
+    override fun getAdminService(id: Int): List<AddServiceModel> {
+        return database.getAdminService(id)
+    }
+
+    override fun getAdminPersonalDetails(username: String): List<PersonalDetailsModel> {
+        return database.getPersonalDetails(username)
+    }
+
     override fun deleteService(id: Int): Boolean {
         return database.deleteService(id)
     }
