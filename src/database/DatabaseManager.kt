@@ -157,9 +157,18 @@ class DatabaseManager {
 
     fun updateActiveService(id: Int, value: Boolean) {
         database.update(SubscribedUser) {
-            set(ServiceInfo.active, value)
+            set(SubscribedUser.active, value)
             where {
                 it.id eq id
+            }
+        }
+    }
+
+    fun updateServiceStatus(id : Int , value : Boolean){
+        database.update(ServiceInfo){
+            set(ServiceInfo.active , value)
+            where {
+                it.serviceid eq id
             }
         }
     }
@@ -314,7 +323,7 @@ class DatabaseManager {
             .map { row ->
                 UserDetails(
                     fullname = row[UserDetails.fullname]!!,
-                    servicename = row[UserDetails.fullname]!!,
+                    servicename = row[ServiceInfo.name]!!,
                     contactno = row[UserDetails.mobileno]!!,
                     location = row[UserDetails.location]!!,
                     latitude = row[UserDetails.latitude]!!,

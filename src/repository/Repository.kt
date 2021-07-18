@@ -19,6 +19,7 @@ interface Repository {
       fun putAdminLocation(username : String , locationModel : LocationModel) :  Boolean
       fun putPersonalDetails(username : String , details : PersonalDetailsModel)
       fun putService(id : Int , details : AddServiceModel)
+      fun putServiceStatus(id : Int , active : Boolean)
     //get
       fun getAllSubscribedService(username : String) : List<SubscribedServiceModel>
       fun getSubscribedService(id : Int) : List<SubscribedServiceDetailsModel>

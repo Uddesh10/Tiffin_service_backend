@@ -62,11 +62,11 @@ fun Application.module() {
                 try {
                     val username = call.parameters["username"]!!
                     val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    val multipartData = call.receiveMultipart()
                     var data: String
                     var fileName = ""
                     var personalDetailsModel: PersonalDetailsModel
                     if (principal == username) {
-                        val multipartData = call.receiveMultipart()
                         multipartData.forEachPart { part ->
                             when (part) {
                                 is PartData.FormItem -> {
@@ -86,6 +86,7 @@ fun Application.module() {
                         call.respond(HttpStatusCode.Unauthorized)
                     }
                 }catch (e : Exception){
+                    println(e)
                     call.respond(HttpStatusCode.BadRequest)
                 }
             }
@@ -137,7 +138,7 @@ fun Application.module() {
                                     data = part.value
                                     updateServiceModel = gson.fromJson(data, AddServiceModel::class.java)
                                     repository.putService(id, updateServiceModel)
-                                    fileName = updateServiceModel.foodimage
+                                    fileName = "$username$id.png"
                                 }
                                 is PartData.FileItem -> {
                                     val fileBytes = part.streamProvider().readBytes()
@@ -145,6 +146,23 @@ fun Application.module() {
                                 }
                             }
                         }
+                        call.respond(HttpStatusCode.OK)
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }catch (e : Exception){
+                    println(e)
+                    call.respond(HttpStatusCode.BadRequest)
+                }
+            }
+            put("/updatestatus"){
+                try {
+                    val username = call.parameters["username"]!!
+                    val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
+                    val id: Int = call.parameters["id"]!!.toInt()
+                    val active = call.parameters["active"]!!.toBoolean()
+                    if (principal == username) {
+                        repository.putServiceStatus(id, active)
                         call.respond(HttpStatusCode.OK)
                     } else {
                         call.respond(HttpStatusCode.Unauthorized)
@@ -162,8 +180,11 @@ fun Application.module() {
                         val fileName = "$username$id.png"
                         val file = File("foodimages/$fileName")
                         file.delete()
-                        repository.deleteService(id)
-                        call.respond(HttpStatusCode.OK)
+                        val success = repository.deleteService(id)
+                        if(success)
+                            call.respond(HttpStatusCode.OK)
+                        else
+                            call.respond(HttpStatusCode.NotModified)
                     } else {
                         call.respond(HttpStatusCode.Unauthorized)
                     }
@@ -197,7 +218,7 @@ fun Application.module() {
                     call.respond(HttpStatusCode.BadRequest)
                 }
             }
-            get("/personaldetails"){
+            get("/getpersonaldetails"){
                 try {
                     val username = call.parameters["username"]!!
                     val principal = call.authentication.principal<JWTAdminConfig.JwtUser>()!!.userName
@@ -386,7 +407,8 @@ fun Application.module() {
                     call.respond(HttpStatusCode.Unauthorized)
                 } else {
                     val token = jwtUserConfig.generateToken(JWTUserConfig.JwtUser(user.username))
-                    call.respond(HttpStatusCode.OK, token)
+                    val mobileno = user.mobileno
+                    call.respond(HttpStatusCode.OK, LoggedInDataModel(token, mobileno))
                 }
             }catch (e : Exception){
                 call.respond(HttpStatusCode.BadRequest)
@@ -400,7 +422,8 @@ fun Application.module() {
                     call.respond(HttpStatusCode.Unauthorized)
                 } else {
                     val token = jwtAdminConfig.generateToken(JWTAdminConfig.JwtUser(user.username))
-                    call.respond(HttpStatusCode.OK, token)
+                    val mobileno = user.mobileno
+                    call.respond(HttpStatusCode.OK, LoggedInDataModel(token , mobileno))
                 }
             }catch (e : Exception){
                 call.respond(HttpStatusCode.BadRequest)
@@ -429,8 +452,6 @@ fun Application.module() {
             val file = File("foodimages/$fileName")
             call.respondFile(file)
         }
-
-
 
     }
 }

@@ -58,6 +58,10 @@ class RepositoryImplementation : Repository {
         database.updateService(id , details)
     }
 
+    override fun putServiceStatus(id: Int, active: Boolean) {
+        database.updateServiceStatus(id , active)
+    }
+
     override fun getAllSubscribedService(username: String): List<SubscribedServiceModel> {
         return database.getAllSubscribedService(username)
     }
